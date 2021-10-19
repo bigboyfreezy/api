@@ -1,6 +1,6 @@
 from flask import *
 app = Flask(__name__)
-from crypt import verify_password
+from crypt import verify_password,hash_password
 
 
 #API -- Application Programming Interface
@@ -80,9 +80,88 @@ def login():
             response.status_code = 200
             return response
 
+@app.route('/register', methods = ['POST'])
+def register():
+    try:
+        json = request.json
+        fname = json['fname']
+        lname = json['lname']
+        email = json['email']
+        password = json['password']
+        confirm_password = json['confirm_password']
+        tel = json['tel']
+
+        if len(fname) == 0:
+            response = jsonify({'msg': 'Empty Firstname'})
+            response.status_code = 302
+            return response
+        elif len(lname) == 0:
+            response = jsonify({'msg': 'Empty Lastname'})
+            response.status_code = 302
+            return response
+        elif len(email) == 0:
+            response = jsonify({'msg': 'Empty Email'})
+            response.status_code = 302
+            return response
+        elif len(tel) < 10:
+            response = jsonify({'msg': 'Empty Phone Number'})
+            response.status_code = 302
+            return response
+        elif len(password) < 8:
+            response = jsonify({'msg': 'Telephone number should be atleast ten numbers'})
+            response.status_code = 302
+            return response
+        if password != confirm_password:
+            response = jsonify({'msg': 'Password Do Not Match'})
+            response.status_code = 302
+            return response
+
+        else:
+            cursor = connection.cursor(pymysql.cursors.DictCursor)
+            sql = 'insert into customers(fname,lname,email,password,tel)values(%s,%s,%s,%s,%s) '
+            try:
+
+                cursor.execute(sql, (fname,lname,email,hash_password(password),tel))
+                connection.commit()
+                response = jsonify({'msg': 'Saved successful'})
+                response.status_code = 302
+                return response
+            except:
+                response = jsonify({'msg': 'Failed to save'})
+                response.status_code = 302
+                return response
+    except:
+        response = jsonify({'msg': 'Something Went Wrong'})
+        response.status_code = 302
+        return response
+
+list10 = []
+@app.route("/customer_pending_orders/<int:customer_id>")
+def customer_pending_orders(customer_id):
+            list10.clear()
+            sql = 'select DISTINCT order_code from orders where email = %s and status = %s order by pay_date desc'
+            cursor = connection.cursor()
+            cursor.execute(sql, (customer_id, 'Pending'))
+            if cursor.rowcount > 0:
+                rows = cursor.fetchall()
+                for row in rows:
+                    sql4 = 'select * from orders where order_code = %s and status = %s order by pay_date desc'
+                    cursor4 = connection.cursor(pymysql.cursors.DictCursor)
+                    cursor4.execute(sql4, (row[0], 'Pending'))
+                    rows = cursor4.fetchall()
+                    list10.append(rows)
+                response = jsonify(list10)
+                response.status_code = 302
+                return response
+            else:
+                response = jsonify({'msg':'No records'})
+                response.status_code = 302
+                return response
+
+
 
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=6060)
     app.debug = True
