@@ -241,7 +241,35 @@ def changepassword():
             return response
 
 
+@app.route('/edit_profile', methods = ['POST'])
+def edit_profile():
+
+
+        if request.method == "POST":
+
+            json= request.json
+            customer_id = request.json['customer_id']
+            fname = request.json['fname']
+            lname = request.json['lname']
+            email = request.json['email']
+            tel= request.json['tel']
+
+
+
+            cursor = connection.cursor()
+            sql = 'update customers set fname = %s, lname = %s, email = %s, tel = %s,  active = %s where customer_id= %s'
+            cursor.execute(sql, (fname, lname, email, tel,customer_id ))
+            connection.commit()
+            response = jsonify({'msg': 'update successful'})
+            response.status_code = 200
+            return response
+
+        else:
+
+            response = jsonify({'msg': 'POST NEEDED'})
+            response.status_code = 202
+            return response
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=6060)
     app.debug = True
