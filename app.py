@@ -158,10 +158,90 @@ def customer_pending_orders(customer_id):
                 response.status_code = 302
                 return response
 
+@app.route("/products")
+def products():
 
+            sql = 'select * from products'
+            cursor = connection.cursor(pymysql.cursors.DictCursor)
+            cursor.execute(sql)
+            if cursor.rowcount > 0:
+                record = cursor.fetchall()
+                response = jsonify(record)
+                response.status_code = 302
+                return response
+            else:
+                response = jsonify({'msg':'Not found'})
+                response.status_code = 302
+                return response
+
+@app.route("/product_single/<int:product_id>")
+def product_single(product_id):
+
+            sql = 'select * from products where product_id=%s'
+            cursor = connection.cursor(pymysql.cursors.DictCursor)
+            cursor.execute(sql,(product_id))
+            if cursor.rowcount > 0:
+                record = cursor.fetchone()
+                response = jsonify(record)
+                response.status_code = 302
+                return response
+            else:
+                response = jsonify({'msg':'Not found'})
+                response.status_code = 302
+                return response
+
+
+@app.route('/changepassword', methods = ['POST'])
+def changepassword():
+
+        if request.method == 'POST':
+            json =request.json
+            customer_id= request.json['customer_id']
+            currentpassword = request.json['currentpassword']
+            newpassword = request.json['newpassword']
+            confirmpassword = request.json['confirmpassword']
+
+            sql = 'select * from customers where customer_id = %s'
+            cursor = connection.cursor()
+            cursor.execute(sql, (customer_id))
+            print(cursor.rowcount)
+            if cursor.rowcount==0:
+                response = jsonify({'msg': 'User Does Not Exist'})
+                response.status_code = 404
+                return response
+            else:
+                # fetchpassword..just one
+                row = cursor.fetchone()
+                hashed_password = row[4]
+                # verify the hashed and the password if they match
+                status = verify_password(hashed_password, currentpassword)
+                if status == True:
+                    # if new pass is not the same as confirm pass then they dont math and u render the template
+                    if newpassword !=confirmpassword:
+                        response = jsonify({'msg': 'Password Do Not Match'})
+                        response.status_code = 404
+                        return response
+                    else:
+                        sql = 'UPDATE customers SET password = %s where customer_id = %s'
+                        cursor = connection.cursor()
+                        cursor.execute(sql,(hash_password(newpassword), customer_id))
+                        connection.commit()
+                        response = jsonify({'msg': 'Password Changed'})
+                        response.status_code = 200
+                        return response
+
+                else:
+                    response = jsonify({'msg': 'Current Password is wrong'})
+                    response.status_code = 404
+                    return response
+
+        else:
+            response = jsonify({'msg': 'POST NEEDED'})
+            response.status_code = 404
+            return response
 
 
 
 if __name__ == '__main__':
-    app.run(port=6060)
+    app.run()
     app.debug = True
