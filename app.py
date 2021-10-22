@@ -257,7 +257,7 @@ def edit_profile():
 
 
             cursor = connection.cursor()
-            sql = 'update customers set fname = %s, lname = %s, email = %s, tel = %s,  active = %s where customer_id= %s'
+            sql = 'update customers set fname = %s, lname = %s, email = %s, tel = %s   where customer_id= %s'
             cursor.execute(sql, (fname, lname, email, tel,customer_id ))
             connection.commit()
             response = jsonify({'msg': 'update successful'})
